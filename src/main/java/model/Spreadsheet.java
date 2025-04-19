@@ -1,4 +1,146 @@
 package model;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 public class Spreadsheet {
+    private List<List<String>> spreadsheetCells;
+    private Integer maxCellLength = 0;
+
+    public Spreadsheet(List<List<String>> csvValues) {
+        spreadsheetCells = csvValues;
+        processSpreadsheet();
+    }
+
+    protected void processSpreadsheet() {
+
+        boolean processingComplete = false; //initialise as false so that the while loop can start
+        System.out.println("processingComplete initial state: " + processingComplete);
+
+        while (!processingComplete) { //TODO three nested loops.
+            for (int i = 0; i < spreadsheetCells.size(); i++) {
+
+                List<String> rowData = spreadsheetCells.get(i);
+                processingComplete = true; // set processingComplete to true, it gets set to false if a function cell is
+                // found. We scan through the csvValues until all functions are complete
+                System.out.println("processingComplete: " + processingComplete);
+
+                for (int j = 0; j < rowData.size(); j++) {
+
+                    String cellValue = rowData.get(j);
+
+                    System.out.println("Cell value: " + cellValue);
+
+                    // check if this cell is a function, if yes, update the cellValue with the function result
+                    if (rowData.get(j).matches(".*[^0-9].*") && cellValue.startsWith("#(")) {
+                        //TODO I'm making the assumption that cellValue.startsWith("#(") is a good check for a function.
+                        processingComplete = false;
+                        System.out.println("processingComplete: " + processingComplete);
+                        System.out.println("Function cell: " + cellValue);
+                        cellValue = performFunction(rowData.get(j));
+                    }
+
+                    //update maxCellLength if the current cellValue is larger than the maxCellLength
+                    maxCellLength = maxCellLength < cellValue.length() ? cellValue.length() : maxCellLength;
+                    rowData.set(j, cellValue); //TODO should these values in the 2D array be immutable? To protect against side effects
+                    //TODO Then we have to create a new 2D array with the updated values.
+                }
+            }
+        }
+    }
+
+    protected String performFunction(String functionCell) {
+
+        //TODO check for null string or malformed function syntax
+
+        //Parse Function cell
+        String[] functionAndParameters = functionCell.substring(functionCell.indexOf("(")+1, functionCell.indexOf(")")).split(" ");
+
+        String function = functionAndParameters[0];
+        String[] parameters = Arrays.copyOfRange(functionAndParameters, 1, functionAndParameters.length);
+
+        List<Double> numericParameters = new ArrayList<>();
+
+        try {
+            Arrays.stream(parameters)
+                    .forEach(stringParameter ->
+                            numericParameters.add(getNumericValueForKey(stringParameter)));
+        } catch(NumberFormatException e) {
+            return functionCell; //if a parameter of the function is non-numeric we get a NumberFormatException
+            //we return the original function string and allow it to be calculated later when
+            //the field it references has been calculated.
+        }
+
+        Double result = 0.0;
+
+        switch (function.toLowerCase()) {
+            case "prod":
+                result = numericParameters.stream()
+                        .reduce(1.0, (productResult, parameter) -> productResult * parameter);
+                break;
+            case "sum":
+                result = numericParameters.stream()
+                        .reduce(0.0, (sumResult, parameter) -> sumResult + parameter);
+                break;
+            default:
+                System.out.println("Unsupported function: " + function);
+        }
+
+        return String.valueOf(result);
+
+        //TODO NB: throw error if command is trying to access fields out of bounds of the rows or columns length
+    }
+    protected Double getNumericValueForKey(String stringParameter) {
+
+        System.out.println("stringParameter: " + stringParameter);
+
+        char letter = stringParameter.charAt(0);
+        System.out.println("letter: " + letter);
+        String stringNumber = stringParameter.substring(1, stringParameter.length());
+        System.out.println("stringNumber: " + stringNumber);
+        Integer number = Integer.parseInt(stringNumber)-1;
+        System.out.println("number: " + number);
+        Integer letterIndex = (letter - 'A');
+        System.out.println("letterIndex: " + letterIndex);
+        System.out.println("Value at key position: " + spreadsheetCells.get(number).get(letterIndex));
+        return Double.parseDouble(spreadsheetCells.get(number).get(letterIndex));
+    }
+
+    public void writeToFile(String outputSpreadSheetFilePath) {
+
+        try (FileWriter writer = new FileWriter(outputSpreadSheetFilePath)) {
+            for (int i = 0; i < spreadsheetCells.size(); i++) {
+                List<String> rowData = spreadsheetCells.get(i);
+                for (int j = 0; j < rowData.size(); j++) {
+                    String output;
+                    if (rowData.get(j).trim().equalsIgnoreCase("#hl")) {
+                        output = "-".repeat(maxCellLength) + "|";
+                        writer.write(output);
+                    } else {
+                        boolean isNumber = false;
+                        try {
+                            Double.parseDouble(rowData.get(j));
+                            isNumber = true;
+
+                        } catch (NumberFormatException e) {
+                            //ignore
+                        }
+
+                        String padding = " ".repeat(maxCellLength - rowData.get(j).length());
+                        if (isNumber) {
+                            writer.write(padding + rowData.get(j) + "|");
+                        } else {
+                            writer.write(rowData.get(j) + padding + "|");
+                        }
+                    }
+                }
+                writer.write(System.lineSeparator());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

@@ -18,6 +18,6 @@ public class CsvToSpreadsheetConverterTest {
     @Test
     void testPerformFunction() {
         //TODO should this be a spreadsheet object that has a perform function/s method?
-        CsvToSpreadsheetConverter.performFunction("#(prod A4 B4)", SPREAD_SHEET);
+//        CsvToSpreadsheetConverter.performFunction("#(prod A4 B4)", SPREAD_SHEET);
     }
 }
