@@ -2,14 +2,12 @@ import model.Spreadsheet;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class CsvToSpreadsheetConverter {
-
-    //TODO NB Unit Tests
-    //TODO NB Use maven to build and run from the command line
 
     public static void main(String[] args) {
         if (args.length < 2) {

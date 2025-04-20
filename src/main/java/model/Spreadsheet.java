@@ -10,12 +10,24 @@ public class Spreadsheet {
     private List<List<String>> spreadsheetCells;
     private Integer maxCellLength = 0;
 
+    /*
+        The spreadsheet values can only be set once. The only way to create the spreadsheet 2D array is through the
+        constructor which will only run processSpreadsheet() once.
+
+        We set the internal spreadsheetCells 2D array using the csvValues passed into the constructor.
+        The internal spreadsheetCells 2D array fields are updated themselves.
+     */
     public Spreadsheet(List<List<String>> csvValues) {
+
         spreadsheetCells = csvValues;
         processSpreadsheet();
     }
 
-    protected void processSpreadsheet() {
+    public List<List<String>> getSpreadsheetCells() {
+        return spreadsheetCells;
+    }
+
+    private void processSpreadsheet() {
 
         boolean processingComplete = false; //initialise as false so that the while loop can start
         System.out.println("processingComplete initial state: " + processingComplete);
@@ -40,34 +52,41 @@ public class Spreadsheet {
                         processingComplete = false;
                         System.out.println("processingComplete: " + processingComplete);
                         System.out.println("Function cell: " + cellValue);
-                        cellValue = performFunction(rowData.get(j));
+
+                        try {
+                            cellValue = performFunction(rowData.get(j));
+                        } catch(IndexOutOfBoundsException e) {
+                            //catch the exception and log an error, the cellValue stays as it is
+                            System.out.println("A coordinate in this function: " + rowData.get(j) + " is out of bounds for the spreadsheet. The spreadsheet cannot be processed");
+                            throw new RuntimeException("A coordinate in this function: " + rowData.get(j) + " is out of bounds for the spreadsheet. Spreadsheet cannot be processed");
+                        }
                     }
 
                     //update maxCellLength if the current cellValue is larger than the maxCellLength
                     maxCellLength = maxCellLength < cellValue.length() ? cellValue.length() : maxCellLength;
-                    rowData.set(j, cellValue); //TODO should these values in the 2D array be immutable? To protect against side effects
-                    //TODO Then we have to create a new 2D array with the updated values.
+
+                    rowData.set(j, cellValue);
                 }
             }
         }
     }
 
-    protected String performFunction(String functionCell) {
+    private String performFunction(String functionCell) {
 
-        //TODO check for null string or malformed function syntax
+        //TODO check for malformed function syntax
 
         //Parse Function cell
-        String[] functionAndParameters = functionCell.substring(functionCell.indexOf("(")+1, functionCell.indexOf(")")).split(" ");
+        String[] functionAndCellCoordinates = functionCell.substring(functionCell.indexOf("(")+1, functionCell.indexOf(")")).split(" ");
 
-        String function = functionAndParameters[0];
-        String[] parameters = Arrays.copyOfRange(functionAndParameters, 1, functionAndParameters.length);
+        String function = functionAndCellCoordinates[0];
+        String[] cellCoordinates = Arrays.copyOfRange(functionAndCellCoordinates, 1, functionAndCellCoordinates.length);
 
-        List<Double> numericParameters = new ArrayList<>();
+        List<Double> numericCellValues = new ArrayList<>();
 
         try {
-            Arrays.stream(parameters)
-                    .forEach(stringParameter ->
-                            numericParameters.add(getNumericValueForKey(stringParameter)));
+            Arrays.stream(cellCoordinates)
+                    .forEach(cellCoordinate ->
+                            numericCellValues.add(getNumericValueForCellCoordinate(cellCoordinate)));
         } catch(NumberFormatException e) {
             return functionCell; //if a parameter of the function is non-numeric we get a NumberFormatException
             //we return the original function string and allow it to be calculated later when
@@ -78,11 +97,11 @@ public class Spreadsheet {
 
         switch (function.toLowerCase()) {
             case "prod":
-                result = numericParameters.stream()
+                result = numericCellValues.stream()
                         .reduce(1.0, (productResult, parameter) -> productResult * parameter);
                 break;
             case "sum":
-                result = numericParameters.stream()
+                result = numericCellValues.stream()
                         .reduce(0.0, (sumResult, parameter) -> sumResult + parameter);
                 break;
             default:
@@ -93,19 +112,14 @@ public class Spreadsheet {
 
         //TODO NB: throw error if command is trying to access fields out of bounds of the rows or columns length
     }
-    protected Double getNumericValueForKey(String stringParameter) {
+    private Double getNumericValueForCellCoordinate(String cellCoordinate) {
 
-        System.out.println("stringParameter: " + stringParameter);
+        System.out.println("cellCoordinate: " + cellCoordinate);
 
-        char letter = stringParameter.charAt(0);
-        System.out.println("letter: " + letter);
-        String stringNumber = stringParameter.substring(1, stringParameter.length());
-        System.out.println("stringNumber: " + stringNumber);
-        Integer number = Integer.parseInt(stringNumber)-1;
-        System.out.println("number: " + number);
+        char letter = cellCoordinate.charAt(0);
+        Integer number = Integer.parseInt(cellCoordinate.substring(1))-1;
         Integer letterIndex = (letter - 'A');
-        System.out.println("letterIndex: " + letterIndex);
-        System.out.println("Value at key position: " + spreadsheetCells.get(number).get(letterIndex));
+
         return Double.parseDouble(spreadsheetCells.get(number).get(letterIndex));
     }
 
