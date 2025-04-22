@@ -32,7 +32,7 @@ public class Spreadsheet {
         boolean processingComplete = false; //initialise as false so that the while loop can start
         System.out.println("processingComplete initial state: " + processingComplete);
 
-        while (!processingComplete) { //TODO three nested loops.
+        while (!processingComplete) {
             for (int i = 0; i < spreadsheetCells.size(); i++) {
 
                 List<String> rowData = spreadsheetCells.get(i);
@@ -48,7 +48,8 @@ public class Spreadsheet {
 
                     // check if this cell is a function, if yes, update the cellValue with the function result
                     if (rowData.get(j).matches(".*[^0-9].*") && cellValue.startsWith("#(")) {
-                        //TODO I'm making the assumption that cellValue.startsWith("#(") is a good check for a function.
+
+                        //I'm making the assumption that cellValue.startsWith("#(") is a good check for a function.
                         processingComplete = false;
                         System.out.println("processingComplete: " + processingComplete);
                         System.out.println("Function cell: " + cellValue);
@@ -72,8 +73,6 @@ public class Spreadsheet {
     }
 
     private String performFunction(String functionCell) {
-
-        //TODO check for malformed function syntax
 
         //Parse Function cell
         String[] functionAndCellCoordinates = functionCell.substring(functionCell.indexOf("(")+1, functionCell.indexOf(")")).split(" ");
@@ -102,15 +101,14 @@ public class Spreadsheet {
                 break;
             case "sum":
                 result = numericCellValues.stream()
-                        .reduce(0.0, (sumResult, parameter) -> sumResult + parameter);
+                        .reduce(0.0, Double::sum);
                 break;
             default:
                 System.out.println("Unsupported function: " + function);
+                return "Function: " + function.toLowerCase() + " not supported";
         }
 
         return String.valueOf(result);
-
-        //TODO NB: throw error if command is trying to access fields out of bounds of the rows or columns length
     }
     private Double getNumericValueForCellCoordinate(String cellCoordinate) {
 
