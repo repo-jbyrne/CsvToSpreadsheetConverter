@@ -12,7 +12,7 @@ public class CsvToSpreadsheetConverter {
     public static void main(String[] args) {
         if (args.length < 2) {
             System.out.println("Please specify the input csv file to use and the output text file for the spreadsheet");
-            System.out.println("Usage: java -cp . CsvToSpreadsheetConverter <input.csv> <output.txt>");
+            System.out.println("Usage: mvn exec:java -Dexec.args=\"<input.csv>  <output.txt>\"");
             return;
         }
 

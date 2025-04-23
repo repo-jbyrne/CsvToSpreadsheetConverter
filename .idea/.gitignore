@@ -1,0 +1,18 @@
+# Default ignored files
+/shelf/
+/workspace.xml
+
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# User-specific files
+*.iws
+*.ipr
+
+# Mac-specific (optional)
+.DS_Store
+
+# Optional: exclude build/output folders
+/out/
+
